@@ -10,7 +10,6 @@ class NumberUtil {
     return n.toStringAsFixed(2);
   }
 
-  //保留多少位小数
   static int _fractionDigits = 2;
 
   static set fractionDigits(int value) {

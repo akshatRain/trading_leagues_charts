@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/physics.dart';
 import 'package:trading_leagues_chart/generated/l10n.dart';
 import 'chart_style.dart';
 import 'entity/info_window_entity.dart';
@@ -25,17 +24,18 @@ class KChartWidget extends StatefulWidget {
 
   KChartWidget(
     this.datas, {
+    Key? key,
     this.mainState = MainState.MA,
     this.volState = VolState.VOL,
     this.secondaryState = SecondaryState.MACD,
     this.isLine = false,
     int fractionDigits = 2,
-  }) {
+  }) : super(key: key) {
     NumberUtil.fractionDigits = fractionDigits;
   }
 
   @override
-  _KChartWidgetState createState() => _KChartWidgetState();
+  State<KChartWidget> createState() => _KChartWidgetState();
 }
 
 class _KChartWidgetState extends State<KChartWidget>
@@ -267,12 +267,13 @@ class _KChartWidgetState extends State<KChartWidget>
 
   Widget _buildItem(String info, String infoName) {
     Color color = Colors.white;
-    if (info.startsWith("+"))
+    if (info.startsWith("+")) {
       color = Colors.green;
-    else if (info.startsWith("-"))
+    } else if (info.startsWith("-")) {
       color = Colors.red;
-    else
+    } else {
       color = Colors.white;
+    }
     return Container(
       constraints: const BoxConstraints(
           minWidth: 95, maxWidth: 110, maxHeight: 14.0, minHeight: 14.0),
@@ -281,10 +282,10 @@ class _KChartWidgetState extends State<KChartWidget>
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: <Widget>[
-          Text("$infoName",
-              style: TextStyle(
+          Text(infoName,
+              style: const TextStyle(
                   color: Colors.white, fontSize: ChartStyle.defaultTextSize)),
-          SizedBox(width: 5),
+          const SizedBox(width: 5),
           Text(info,
               style: TextStyle(
                   color: color, fontSize: ChartStyle.defaultTextSize)),

@@ -7,10 +7,10 @@ import 'package:trading_leagues_chart/entity/depth_entity.dart';
 class DepthChart extends StatefulWidget {
   final List<DepthEntity> bids, asks;
 
-  DepthChart(this.bids, this.asks);
+  const DepthChart(this.bids, this.asks, {Key? key}) : super(key: key);
 
   @override
-  _DepthChartState createState() => _DepthChartState();
+  State<DepthChart> createState() => _DepthChartState();
 }
 
 class _DepthChartState extends State<DepthChart> {
@@ -37,7 +37,7 @@ class _DepthChartState extends State<DepthChart> {
         }
       },
       child: CustomPaint(
-        size: Size(double.infinity, double.infinity),
+        size: const Size(double.infinity, double.infinity),
         painter: DepthChartPainter(
             widget.bids, widget.asks, pressOffset, isLongPress),
       ),
@@ -46,7 +46,6 @@ class _DepthChartState extends State<DepthChart> {
 }
 
 class DepthChartPainter extends CustomPainter {
-  //买入//卖出
   List<DepthEntity> mBuyData, mSellData;
   Offset? pressOffset;
   bool isLongPress;
@@ -55,15 +54,12 @@ class DepthChartPainter extends CustomPainter {
   double mWidth = 0.0, mDrawHeight = 0.0, mDrawWidth = 0.0;
   late double mBuyPointWidth, mSellPointWidth;
 
-  //最大的委托量
   late double mMaxVolume, mMultiple;
 
-  //右侧绘制个数
   int mLineCount = 4;
 
   final Path mBuyPath, mSellPath;
 
-  //买卖出区域边线绘制画笔  //买卖出取悦绘制画笔
   final Paint mBuyLinePaint, mSellLinePaint, mBuyPathPaint, mSellPathPaint;
 
   DepthChartPainter(
@@ -105,12 +101,9 @@ class DepthChartPainter extends CustomPainter {
     mDrawHeight = size.height - mPaddingBottom;
 //    canvas.drawColor(Colors.black, BlendMode.color);
     canvas.save();
-    //绘制买入区域
     drawBuy(canvas);
-    //绘制卖出区域
     drawSell(canvas);
 
-    //绘制界面相关文案
     drawText(canvas);
     canvas.restore();
   }
@@ -258,7 +251,6 @@ class DepthChartPainter extends CustomPainter {
           mSellLinePaint..style = PaintingStyle.stroke);
     }
 
-    //画底部
     TextPainter priceTP = getTextPainter(entity.price.toStringAsFixed(2));
     priceTP.layout();
     double left;
@@ -277,7 +269,7 @@ class DepthChartPainter extends CustomPainter {
         canvas,
         Offset(bottomRect.left + (bottomRect.width - priceTP.width) / 2,
             bottomRect.top + (bottomRect.height - priceTP.height) / 2));
-    //画左边
+
     TextPainter amountTP = getTextPainter(entity.amount.toStringAsFixed(2));
     amountTP.layout();
     double y = getY(entity.amount);
@@ -299,7 +291,6 @@ class DepthChartPainter extends CustomPainter {
             rightRect.top + (rightRect.height - amountTP.height) / 2));
   }
 
-  ///二分查找当前值的index
   int _indexOfTranslateX(double translateX, int start, int end, Function getX) {
     if (end == start || end == -1) {
       return start;
@@ -327,8 +318,7 @@ class DepthChartPainter extends CustomPainter {
   double getSellX(int position) => position * mSellPointWidth + mDrawWidth;
 
   getTextPainter(String text, [Color color = Colors.white]) => TextPainter(
-      text:
-          TextSpan(text: "$text", style: TextStyle(color: color, fontSize: 10)),
+      text: TextSpan(text: text, style: TextStyle(color: color, fontSize: 10)),
       textDirection: TextDirection.ltr);
 
   double getBottomTextY(double textHeight) =>

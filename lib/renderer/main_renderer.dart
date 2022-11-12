@@ -9,7 +9,7 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
   MainState state;
   bool isLine;
 
-  double _contentPadding = 12.0;
+  final double _contentPadding = 12.0;
 
   MainRenderer(Rect mainRect, double maxValue, double minValue,
       double topPadding, this.state, this.isLine, double scaleX)
@@ -19,12 +19,12 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
             minValue: minValue,
             topPadding: topPadding,
             scaleX: scaleX) {
-    var diff = maxValue - minValue; //计算差
-    var newScaleY = (chartRect.height - _contentPadding) / diff; //内容区域高度/差=新的比例
-    var newDiff = chartRect.height / newScaleY; //高/新比例=新的差
-    var value = (newDiff - diff) / 2; //新差-差/2=y轴需要扩大的值
+    var diff = maxValue - minValue;
+    var newScaleY = (chartRect.height - _contentPadding) / diff;
+    var newDiff = chartRect.height / newScaleY;
+    var value = (newDiff - diff) / 2;
     if (newDiff > diff) {
-      this.scaleY = newScaleY;
+      scaleY = newScaleY;
       this.maxValue += value;
       this.minValue -= value;
     }
@@ -99,25 +99,23 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
     ..style = PaintingStyle.fill
     ..isAntiAlias = true;
 
-  //画折线图
   draLine(double lastPrice, double curPrice, Canvas canvas, double lastX,
       double curX) {
     mLinePath ??= Path();
 
-    if (lastX == curX) lastX = 0; //起点位置填充
+    if (lastX == curX) lastX = 0;
     mLinePath!.moveTo(lastX, getY(lastPrice));
     mLinePath!.cubicTo((lastX + curX) / 2, getY(lastPrice), (lastX + curX) / 2,
         getY(curPrice), curX, getY(curPrice));
 
-//    //画阴影
-    mLineFillShader ??= LinearGradient(
+    mLineFillShader ??= const LinearGradient(
       begin: Alignment.topCenter,
       end: Alignment.bottomCenter,
       tileMode: TileMode.clamp,
       colors: ChartColors.kLineShadowColor,
     ).createShader(Rect.fromLTRB(
         chartRect.left, chartRect.top, chartRect.right, chartRect.bottom));
-    mLineFillPaint..shader = mLineFillShader;
+    mLineFillPaint.shader = mLineFillShader;
 
     mLineFillPath ??= Path();
 
@@ -176,7 +174,7 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
     double r = mCandleWidth / 2;
     double lineR = mCandleLineWidth / 2;
 
-    //防止线太细，强制最细1px
+    //1px
     if ((open - close).abs() < 1) {
       if (open > close) {
         open += 0.5;
@@ -202,24 +200,24 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
   }
 
   @override
-  void drawRightText(canvas, textStyle, int gridRows) {
-    double rowSpace = chartRect.height / gridRows;
-    for (var i = 0; i <= gridRows; ++i) {
+  void drawRightText(canvas, textStyle, int gridRowSpace) {
+    int newGridRows = chartRect.height ~/ gridRowSpace;
+    for (var i = 0; i <= newGridRows; ++i) {
       double position = 0;
       if (i == 0) {
-        position = (gridRows - i) * rowSpace - _contentPadding / 2;
-      } else if (i == gridRows) {
-        position = (gridRows - i) * rowSpace + _contentPadding / 2;
+        position = (newGridRows - i) * gridRowSpace - _contentPadding / 2;
+      } else if (i == newGridRows) {
+        position = (newGridRows - i) * gridRowSpace + _contentPadding / 2;
       } else {
-        position = (gridRows - i) * rowSpace;
+        position = (newGridRows - i) * gridRowSpace.toDouble();
       }
       var value = position / scaleY + minValue;
-      TextSpan span = TextSpan(text: "${format(value)}", style: textStyle);
+      TextSpan span = TextSpan(text: format(value), style: textStyle);
       TextPainter tp =
           TextPainter(text: span, textDirection: TextDirection.ltr);
       tp.layout();
       double y;
-      if (i == 0 || i == gridRows) {
+      if (i == 0 || i == newGridRows) {
         y = getY(value) - tp.height / 2;
       } else {
         y = getY(value) - tp.height;
@@ -229,17 +227,17 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
   }
 
   @override
-  void drawGrid(Canvas canvas, int gridRows, int gridColumns) {
-//    final int gridRows = 4, gridColumns = 4;
-    double rowSpace = chartRect.height / gridRows;
-    for (int i = 0; i <= gridRows; i++) {
-      canvas.drawLine(Offset(0, rowSpace * i + topPadding),
-          Offset(chartRect.width, rowSpace * i + topPadding), gridPaint);
-    }
-    double columnSpace = chartRect.width / gridColumns;
-    for (int i = 0; i <= columnSpace; i++) {
-      canvas.drawLine(Offset(columnSpace * i, topPadding / 3),
-          Offset(columnSpace * i, chartRect.bottom), gridPaint);
+  void drawGrid(Canvas canvas, int gridRowSpace, int gridColumns) {
+    canvas.drawLine(Offset(0, chartRect.bottom),
+        Offset(chartRect.width, chartRect.bottom), gridPaint);
+    final int gridRowsNew = chartRect.height ~/ gridRowSpace;
+    for (int i = 0; i <= gridRowsNew; i++) {
+      double dashWidth = 3, dashSpace = 7, startX = 0;
+      while (startX <= chartRect.width) {
+        canvas.drawLine(Offset(startX, chartRect.bottom - i * 50),
+            Offset(startX + dashWidth, chartRect.bottom - i * 50), gridPaint);
+        startX += dashWidth + dashSpace;
+      }
     }
   }
 }

@@ -38,11 +38,11 @@ abstract class BaseChartRenderer<T> {
     return NumberUtil.format(n);
   }
 
-  void drawGrid(Canvas canvas, int gridRows, int gridColumns);
+  void drawGrid(Canvas canvas, int gridRowSpace, int gridColumns);
 
   void drawText(Canvas canvas, T data, double x);
 
-  void drawRightText(canvas, textStyle, int gridRows);
+  void drawRightText(canvas, textStyle, int gridRowSpace);
 
   void drawChart(T lastPoint, T curPoint, double lastX, double curX, Size size,
       Canvas canvas);

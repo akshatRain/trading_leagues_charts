@@ -215,11 +215,11 @@ class DataUtil {
         rsiABSEma = 0;
         rsiMaxEma = 0;
       } else {
-        double Rmax = max(0, closePrice - dataList[i - 1].close);
-        double RAbs = (closePrice - dataList[i - 1].close).abs();
+        double rMax = max(0, closePrice - dataList[i - 1].close);
+        double rAbs = (closePrice - dataList[i - 1].close).abs();
 
-        rsiMaxEma = (Rmax + (14 - 1) * rsiMaxEma) / 14;
-        rsiABSEma = (RAbs + (14 - 1) * rsiABSEma) / 14;
+        rsiMaxEma = (rMax + (14 - 1) * rsiMaxEma) / 14;
+        rsiABSEma = (rAbs + (14 - 1) * rsiABSEma) / 14;
         rsi = (rsiMaxEma / rsiABSEma) * 100;
       }
       if (i < 13) rsi = 0;
@@ -312,7 +312,6 @@ class DataUtil {
     }
   }
 
-  //增量更新时计算最后一个数据
   static addLastData(List<KLineEntity> dataList, KLineEntity data) {
     dataList.add(data);
     _calcMA(dataList, true);
@@ -324,7 +323,6 @@ class DataUtil {
     _calcWR(dataList, true);
   }
 
-  //更新最后一条数据
   static updateLastData(List<KLineEntity> dataList) {
     _calcMA(dataList, true);
     _calcBOLL(dataList, true);

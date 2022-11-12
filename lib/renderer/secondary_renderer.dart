@@ -1,5 +1,3 @@
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import '../entity/macd_entity.dart';
 import 'package:trading_leagues_chart/tl_chart_widget.dart' show SecondaryState;
@@ -27,25 +25,30 @@ class SecondaryRenderer extends BaseChartRenderer<MACDEntity> {
         drawMACD(curPoint, canvas, curX, lastPoint, lastX);
         break;
       case SecondaryState.KDJ:
-        if (lastPoint.k != 0)
+        if (lastPoint.k != 0) {
           drawLine(lastPoint.k!, curPoint.k!, canvas, lastX, curX,
               ChartColors.kColor);
-        if (lastPoint.d != 0)
+        }
+        if (lastPoint.d != 0) {
           drawLine(lastPoint.d!, curPoint.d!, canvas, lastX, curX,
               ChartColors.dColor);
-        if (lastPoint.j != 0)
+        }
+        if (lastPoint.j != 0) {
           drawLine(lastPoint.j!, curPoint.j!, canvas, lastX, curX,
               ChartColors.jColor);
+        }
         break;
       case SecondaryState.RSI:
-        if (lastPoint.rsi != 0)
+        if (lastPoint.rsi != 0) {
           drawLine(lastPoint.rsi!, curPoint.rsi!, canvas, lastX, curX,
               ChartColors.rsiColor);
+        }
         break;
       case SecondaryState.WR:
-        if (lastPoint.r != 0)
+        if (lastPoint.r != 0) {
           drawLine(lastPoint.r!, curPoint.r!, canvas, lastX, curX,
               ChartColors.rsiColor);
+        }
         break;
       default:
         break;
@@ -141,13 +144,13 @@ class SecondaryRenderer extends BaseChartRenderer<MACDEntity> {
   }
 
   @override
-  void drawRightText(canvas, textStyle, int gridRows) {
+  void drawRightText(canvas, textStyle, int gridRowSpace) {
     TextPainter maxTp = TextPainter(
-        text: TextSpan(text: "${format(maxValue)}", style: textStyle),
+        text: TextSpan(text: format(maxValue), style: textStyle),
         textDirection: TextDirection.ltr);
     maxTp.layout();
     TextPainter minTp = TextPainter(
-        text: TextSpan(text: "${format(minValue)}", style: textStyle),
+        text: TextSpan(text: format(minValue), style: textStyle),
         textDirection: TextDirection.ltr);
     minTp.layout();
 
@@ -158,14 +161,23 @@ class SecondaryRenderer extends BaseChartRenderer<MACDEntity> {
   }
 
   @override
-  void drawGrid(Canvas canvas, int gridRows, int gridColumns) {
+  void drawGrid(Canvas canvas, int gridRowSpace, int gridColumns) {
     canvas.drawLine(Offset(0, chartRect.bottom),
         Offset(chartRect.width, chartRect.bottom), gridPaint);
-    double columnSpace = chartRect.width / gridColumns;
-    for (int i = 0; i <= columnSpace; i++) {
-      //mSecondaryRect垂直线
-      canvas.drawLine(Offset(columnSpace * i, chartRect.top - topPadding),
-          Offset(columnSpace * i, chartRect.bottom), gridPaint);
+    final int gridRowsNew = chartRect.height ~/ gridRowSpace;
+    for (int i = 0; i <= gridRowsNew; i++) {
+      double dashWidth = 3, dashSpace = 7, startX = 0;
+      while (startX <= chartRect.width) {
+        canvas.drawLine(Offset(startX, chartRect.bottom - i * 50),
+            Offset(startX + dashWidth, chartRect.bottom - i * 50), gridPaint);
+        startX += dashWidth + dashSpace;
+      }
     }
+    // double columnSpace = chartRect.width / gridColumns;
+    // for (int i = 0; i <= columnSpace; i++) {
+    //   //mSecondaryRect
+    //   canvas.drawLine(Offset(columnSpace * i, chartRect.top - topPadding),
+    //       Offset(columnSpace * i, chartRect.bottom), gridPaint);
+    // }
   }
 }

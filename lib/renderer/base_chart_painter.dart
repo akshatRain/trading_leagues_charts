@@ -20,7 +20,6 @@ abstract class BaseChartPainter extends CustomPainter {
   bool isLongPress = false;
   bool isLine;
 
-  //3块区域大小与位置
   late Rect mMainRect;
   Rect? mVolRect, mSecondaryRect;
   late double mDisplayHeight, mWidth;
@@ -35,10 +34,10 @@ abstract class BaseChartPainter extends CustomPainter {
   double mMainHighMaxValue = -double.maxFinite,
       mMainLowMinValue = double.maxFinite;
   int mItemCount = 0;
-  double mDataLen = 0.0; //数据占屏幕总长度
+  double mDataLen = 0.0;
   double mPointWidth = ChartStyle.pointWidth;
-  List<String> mFormats = [yyyy, '-', mm, '-', dd, ' ', HH, ':', nn]; //格式化时间
-  double mMarginRight = 0.0; //k线右边空出来的距离
+  List<String> mFormats = [yyyy, '-', mm, '-', dd, ' ', HH, ':', nn];
+  double mMarginRight = 0.0;
 
   BaseChartPainter(
       {required this.datas,
@@ -61,15 +60,14 @@ abstract class BaseChartPainter extends CustomPainter {
     int firstTime = datas.first.id ?? 0;
     int secondTime = datas[1].id ?? 0;
     int time = secondTime - firstTime;
-    //月线
-    if (time >= 24 * 60 * 60 * 28)
+
+    if (time >= 24 * 60 * 60 * 28) {
       mFormats = [yy, '-', mm];
-    //日线等
-    else if (time >= 24 * 60 * 60)
+    } else if (time >= 24 * 60 * 60) {
       mFormats = [yy, '-', mm, '-', dd];
-    //小时线等
-    else
+    } else {
       mFormats = [mm, '-', dd, ' ', HH, ':', nn];
+    }
   }
 
   @override
@@ -101,28 +99,20 @@ abstract class BaseChartPainter extends CustomPainter {
 
   void initChartRenderer();
 
-  //画背景
   void drawBg(Canvas canvas, Size size);
 
-  //画网格
   void drawGrid(canvas);
 
-  //画图表
   void drawChart(Canvas canvas, Size size);
 
-  //画右边值
   void drawRightText(canvas);
 
-  //画时间
   void drawDate(Canvas canvas, Size size);
 
-  //画值
   void drawText(Canvas canvas, KLineEntity data, double x);
 
-  //画最大最小值
   void drawMaxAndMin(Canvas canvas);
 
-  //交叉线值
   void drawCrossLineText(Canvas canvas, Size size);
 
   void initRect(Size size) {
@@ -241,7 +231,7 @@ abstract class BaseChartPainter extends CustomPainter {
   int indexOfTranslateX(double translateX) =>
       _indexOfTranslateX(translateX, 0, mItemCount - 1);
 
-  ///二分查找当前值的index
+  ///index
   int _indexOfTranslateX(double translateX, int start, int end) {
     if (end == start || end == -1) {
       return start;
@@ -264,41 +254,36 @@ abstract class BaseChartPainter extends CustomPainter {
     }
   }
 
-  ///根据索引索取x坐标
-  ///+ mPointWidth / 2防止第一根和最后一根k线显示不全
-  ///@param position 索引值
+  ///+ mPointWidth / 2
+  ///@param position
   double getX(int position) => position * mPointWidth + mPointWidth / 2;
 
   KLineEntity getItem(int position) {
     return datas[position];
   }
 
-  ///scrollX 转换为 TranslateX
+  ///scrollX TranslateX
   void setTranslateXFromScrollX(double scrollX) =>
       mTranslateX = scrollX + getMinTranslateX();
 
-  ///获取平移的最小值
   double getMinTranslateX() {
 //    var x = -mDataLen + mWidth / scaleX - mPointWidth / 2;
     var x = -mDataLen + mWidth / scaleX - mPointWidth / 2;
     x = x >= 0 ? 0.0 : x;
-    //数据不足一屏
     if (x >= 0) {
       if (mWidth / scaleX - getX(datas.length) < mMarginRight) {
-        //数据填充后剩余空间比mMarginRight小，求出差。x-=差
         x -= mMarginRight - mWidth / scaleX + getX(datas.length);
       } else {
-        //数据填充后剩余空间比Right大
+        //Right
         mMarginRight = mWidth / scaleX - getX(datas.length);
       }
     } else if (x < 0) {
-      //数据超过一屏
       x -= mMarginRight;
     }
     return x >= 0 ? 0.0 : x;
   }
 
-  ///计算长按后x的值，转换为index
+  ///index
   int calculateSelectedX(double selectX) {
     int mSelectedIndex = indexOfTranslateX(xToTranslateX(selectX));
     if (mSelectedIndex < mStartIndex) {
@@ -310,7 +295,7 @@ abstract class BaseChartPainter extends CustomPainter {
     return mSelectedIndex;
   }
 
-  ///translateX转化为view中的x
+  ///translateX view
   double translateXtoX(double translateX) =>
       (translateX + mTranslateX) * scaleX;
 

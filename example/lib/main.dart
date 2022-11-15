@@ -1,4 +1,6 @@
 import 'dart:convert';
+import 'dart:ffi';
+import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -13,6 +15,9 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+    ]);
     return MaterialApp(
       title: 'Flutter Demo',
       theme: ThemeData(
@@ -38,15 +43,20 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   List<KLineEntity> datas = [];
+  List<KLineEntity> datasTransactedAt = [];
+  List<TransactionType> transactionType = [];
   bool showLoading = true;
   bool isLine = true;
+  bool showBuySellPriceIndicator = false;
+  List<KLineEntity> buySellPriceData = [];
+  List<int> buySellPriceIndex = [];
+  List<TransactionType> buySellTransactionType = [];
 
   void getData(String period) async {
     late String result;
     try {
       result = await getIPAddress(period);
     } catch (e) {
-      print('获取数据失败,获取本地数据');
       result = await rootBundle.loadString('assets/kline.json');
     } finally {
       Map parseJson = json.decode(result);
@@ -57,6 +67,20 @@ class _MyHomePageState extends State<MyHomePage> {
           .reversed
           .toList()
           .cast<KLineEntity>();
+      // datasTransactedAt = list
+      //     .map((item) => KLineEntity.fromJson(item))
+      //     .toList()
+      //     .reversed
+      //     .toList()
+      //     .sublist(295, 300)
+      //     .cast<KLineEntity>();
+      // transactionType = [
+      //   TransactionType.BOUGHT,
+      //   TransactionType.SOLD,
+      //   TransactionType.BOUGHT,
+      //   TransactionType.SOLD,
+      //   TransactionType.BOUGHT
+      // ];
       DataUtil.calculate(datas);
       showLoading = false;
       setState(() {});
@@ -80,7 +104,7 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   void initState() {
     super.initState();
-    getData('1day');
+    getData('1min');
   }
 
   @override
@@ -88,104 +112,128 @@ class _MyHomePageState extends State<MyHomePage> {
     return Scaffold(
       backgroundColor: const Color(0xFF171728),
 //      appBar: AppBar(title: Text(widget.title)),
-      body: Center(
-        child: Stack(children: <Widget>[
-          Container(
-            height: 470,
-            margin: const EdgeInsets.symmetric(horizontal: 10),
-            width: double.infinity,
-            child: KChartWidget(
-              datas,
-              isLine: false,
-              mainState: MainState.NONE,
-              secondaryState: SecondaryState.NONE,
-              volState: VolState.NONE,
-              fractionDigits: 2,
-            ),
-          ),
-          if (showLoading)
-            Container(
-                width: double.infinity,
+      body: ListView(
+        children: [
+          Center(
+            child: Stack(children: <Widget>[
+              Container(
                 height: 450,
-                alignment: Alignment.center,
-                child: const CircularProgressIndicator()),
-        ]),
-        // buildButtons(),
+                margin: const EdgeInsets.symmetric(horizontal: 10),
+                width: double.infinity,
+                child: KChartWidget(
+                  datas,
+                  isLine: false,
+                  mainState: MainState.NONE,
+                  secondaryState: SecondaryState.NONE,
+                  volState: VolState.NONE,
+                  fractionDigits: 2,
+                  // buySellPriceIndicator: showBuySellPriceIndicator,
+                  buySellPriceData: buySellPriceData,
+                  buySellPriceIndex: buySellPriceIndex,
+                  buySellTransactionType: buySellTransactionType,
+                  datasTransactedAt: datasTransactedAt,
+                  transactionType: transactionType,
+                ),
+              ),
+              if (showLoading)
+                Container(
+                    width: double.infinity,
+                    height: 450,
+                    alignment: Alignment.center,
+                    child: const CircularProgressIndicator()),
+            ]),
+          ),
+          buildButtons(),
+        ],
       ),
     );
   }
 
-  // Widget buildButtons() {
-  //   return Wrap(
-  //     alignment: WrapAlignment.spaceEvenly,
-  //     spacing: 5,
-  //     children: <Widget>[
-  //       button("kLine", onPressed: () => isLine = !isLine),
-  //       button("MA", onPressed: () => _mainState = MainState.MA),
-  //       button("BOLL", onPressed: () => _mainState = MainState.BOLL),
-  //       button("隐藏",
-  //           onPressed: () => _mainState =
-  //               _mainState == MainState.NONE ? MainState.MA : MainState.NONE),
-  //       button("MACD", onPressed: () => _secondaryState = SecondaryState.MACD),
-  //       button("KDJ", onPressed: () => _secondaryState = SecondaryState.KDJ),
-  //       button("RSI", onPressed: () => _secondaryState = SecondaryState.RSI),
-  //       button("WR", onPressed: () => _secondaryState = SecondaryState.WR),
-  //       button("隐藏副视图",
-  //           onPressed: () => _secondaryState =
-  //               _secondaryState == SecondaryState.NONE
-  //                   ? SecondaryState.MACD
-  //                   : SecondaryState.NONE),
-  //       button("update", onPressed: () {
-  //         //更新最后一条数据
-  //         datas.last.close += (Random().nextInt(100) - 50).toDouble();
-  //         datas.last.high = max(datas.last.high, datas.last.close);
-  //         datas.last.low = min(datas.last.low, datas.last.close);
-  //         DataUtil.updateLastData(datas);
-  //       }),
-  //       button("addData", onPressed: () {
-  //         //拷贝一个对象，修改数据
-  //         var kLineEntity = KLineEntity.fromJson(datas.last.toJson());
-  //         kLineEntity.id = kLineEntity.id! + 60 * 60 * 24;
-  //         kLineEntity.open = kLineEntity.close;
-  //         kLineEntity.close += (Random().nextInt(100) - 50).toDouble();
-  //         datas.last.high = max(datas.last.high, datas.last.close);
-  //         datas.last.low = min(datas.last.low, datas.last.close);
-  //         DataUtil.addLastData(datas, kLineEntity);
-  //       }),
-  //       button("1month", onPressed: () async {
-  //         //getData('1mon');
-  //         String result = await rootBundle.loadString('assets/kmon.json');
-  //         Map parseJson = json.decode(result);
-  //         List list = parseJson['data'];
-  //         datas = list
-  //             .map((item) => KLineEntity.fromJson(item))
-  //             .toList()
-  //             .reversed
-  //             .toList()
-  //             .cast<KLineEntity>();
-  //         DataUtil.calculate(datas);
-  //       }),
-  //       TextButton(
-  //           onPressed: () {
-  //             showLoading = true;
-  //             setState(() {});
-  //             getData('1day');
-  //           },
-  //           style: TextButton.styleFrom(backgroundColor: Colors.blue),
-  //           child: const Text("1day", style: TextStyle(color: Colors.black))),
-  //     ],
-  //   );
-  // }
+  Widget buildButtons() {
+    return Wrap(
+      alignment: WrapAlignment.spaceEvenly,
+      spacing: 5,
+      children: <Widget>[
+        button("BUY", onPressed: () {
+          setState(() {
+            buySellPriceData.add(KLineEntity.fromJson(datas.last.toJson()));
+            buySellPriceIndex.add(datas.length.toInt());
+            buySellTransactionType.add(TransactionType.BOUGHT);
+          });
+        }),
+        button("SELL", onPressed: () {
+          setState(() {
+            buySellPriceData.add(KLineEntity.fromJson(datas.last.toJson()));
+            buySellPriceIndex.add(datas.length.toInt());
+            buySellTransactionType.add(TransactionType.SOLD);
+          });
+        }),
+        // button("kLine", onPressed: () => isLine = !isLine),
+        // button("MA", onPressed: () => _mainState = MainState.MA),
+        // button("BOLL", onPressed: () => _mainState = MainState.BOLL),
+        // button("隐藏",
+        //     onPressed: () => _mainState =
+        //         _mainState == MainState.NONE ? MainState.MA : MainState.NONE),
+        // button("MACD", onPressed: () => _secondaryState = SecondaryState.MACD),
+        // button("KDJ", onPressed: () => _secondaryState = SecondaryState.KDJ),
+        // button("RSI", onPressed: () => _secondaryState = SecondaryState.RSI),
+        // button("WR", onPressed: () => _secondaryState = SecondaryState.WR),
+        // button("隐藏副视图",
+        //     onPressed: () => _secondaryState =
+        //         _secondaryState == SecondaryState.NONE
+        //             ? SecondaryState.MACD
+        //             : SecondaryState.NONE),
+        button("update", onPressed: () {
+          //更新最后一条数据
+          datas.last.close += (Random().nextInt(100) - 50).toDouble();
+          datas.last.high = max(datas.last.high, datas.last.close);
+          datas.last.low = min(datas.last.low, datas.last.close);
+          DataUtil.updateLastData(datas);
+        }),
+        button("addData", onPressed: () {
+          //拷贝一个对象，修改数据
+          var kLineEntity = KLineEntity.fromJson(datas.last.toJson());
+          kLineEntity.id = kLineEntity.id! + 60 * 60 * 24;
+          kLineEntity.open = kLineEntity.close;
+          kLineEntity.close += (Random().nextInt(100) - 50).toDouble();
+          datas.last.high = max(datas.last.high, datas.last.close);
+          datas.last.low = min(datas.last.low, datas.last.close);
+          DataUtil.addLastData(datas, kLineEntity);
+        }),
+        // button("1month", onPressed: () async {
+        //   //getData('1mon');
+        //   String result = await rootBundle.loadString('assets/kmon.json');
+        //   Map parseJson = json.decode(result);
+        //   List list = parseJson['data'];
+        //   datas = list
+        //       .map((item) => KLineEntity.fromJson(item))
+        //       .toList()
+        //       .reversed
+        //       .toList()
+        //       .cast<KLineEntity>();
+        //   DataUtil.calculate(datas);
+        // }),
+        // TextButton(
+        //     onPressed: () {
+        //       showLoading = true;
+        //       setState(() {});
+        //       getData('1day');
+        //     },
+        //     style: TextButton.styleFrom(backgroundColor: Colors.blue),
+        //     child: const Text("1day", style: TextStyle(color: Colors.black))),
+      ],
+    );
+  }
 
-  // Widget button(String text, {VoidCallback? onPressed}) {
-  //   return TextButton(
-  //       onPressed: () {
-  //         if (onPressed != null) {
-  //           onPressed();
-  //           setState(() {});
-  //         }
-  //       },
-  //       style: TextButton.styleFrom(backgroundColor: Colors.blue),
-  //       child: Text(text, style: const TextStyle(color: Colors.black)));
-  // }
+  Widget button(String text, {VoidCallback? onPressed}) {
+    return TextButton(
+        onPressed: () {
+          if (onPressed != null) {
+            onPressed();
+            setState(() {});
+          }
+        },
+        style: TextButton.styleFrom(backgroundColor: Colors.blue),
+        child: Text(text, style: const TextStyle(color: Colors.black)));
+  }
 }

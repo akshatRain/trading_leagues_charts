@@ -45,8 +45,8 @@ class ChartColors {
   static const Color realTimeTextBorderColor = Color(0xffFFC0D5);
   static const Color realTimeTextColor = Color(0xff171728);
 
-  static const Color realTimeLineColor = Color(0xffffffff);
-  static const Color realTimeLongLineColor = Color(0xff4C86CD);
+  static const Color realTimeLineColor = Color(0xffFFC0D5);
+  static const Color realTimeLongLineColor = Color(0xffFFC0D5);
 
   static const Color simpleLineUpColor = Color(0xff6CB0A6);
   static const Color simpleLineDnColor = Color(0xffC15466);

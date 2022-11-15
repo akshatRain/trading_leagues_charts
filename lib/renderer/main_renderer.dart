@@ -11,9 +11,15 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
 
   final double _contentPadding = 12.0;
 
-  MainRenderer(Rect mainRect, double maxValue, double minValue,
-      double topPadding, this.state, this.isLine, double scaleX)
-      : super(
+  MainRenderer(
+    Rect mainRect,
+    double maxValue,
+    double minValue,
+    double topPadding,
+    this.state,
+    this.isLine,
+    double scaleX,
+  ) : super(
             chartRect: mainRect,
             maxValue: maxValue,
             minValue: minValue,

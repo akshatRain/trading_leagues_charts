@@ -1,10 +1,11 @@
 import 'dart:async' show StreamSink;
 
 import 'package:flutter/material.dart';
+import 'package:trading_leagues_chart/tl_chart_widget.dart';
+
+import '../entity/info_window_entity.dart';
 import '../entity/k_line_entity.dart';
 import '../utils/date_format_util.dart';
-import '../entity/info_window_entity.dart';
-
 import 'base_chart_painter.dart';
 import 'base_chart_renderer.dart';
 import 'main_renderer.dart';
@@ -19,34 +20,54 @@ class ChartPainter extends BaseChartPainter {
   AnimationController? controller;
   double opacity;
 
-  ChartPainter(
-      {required datas,
-      required scaleX,
-      required scrollX,
-      required isLongPass,
-      required selectX,
-      mainState,
-      volState,
-      secondaryState,
-      this.sink,
-      bool isLine = false,
-      this.controller,
-      this.opacity = 0.0})
-      : super(
-            datas: datas,
-            scaleX: scaleX,
-            scrollX: scrollX,
-            isLongPress: isLongPass,
-            selectX: selectX,
-            mainState: mainState,
-            volState: volState,
-            secondaryState: secondaryState,
-            isLine: isLine);
+  ChartPainter({
+    required datas,
+    required scaleX,
+    required scrollX,
+    required isLongPass,
+    required selectX,
+    mainState,
+    volState,
+    secondaryState,
+    this.sink,
+    bool isLine = false,
+    this.controller,
+    this.opacity = 0.0,
+    // buySellPriceIndicator,
+    buySellPriceData,
+    buySellPriceIndex,
+    buySellTransactionType,
+    datasTransactedAt,
+    transactionType,
+  }) : super(
+          datas: datas,
+          scaleX: scaleX,
+          scrollX: scrollX,
+          isLongPress: isLongPass,
+          selectX: selectX,
+          mainState: mainState,
+          volState: volState,
+          secondaryState: secondaryState,
+          isLine: isLine,
+          // buySellPriceIndicator: buySellPriceIndicator,
+          buySellPriceData: buySellPriceData,
+          buySellPriceIndex: buySellPriceIndex,
+          buySellTransactionType: buySellTransactionType,
+          datasTransactedAt: datasTransactedAt,
+          transactionType: transactionType,
+        );
 
   @override
   void initChartRenderer() {
-    mMainRenderer = MainRenderer(mMainRect, mMainMaxValue, mMainMinValue,
-        ChartStyle.topPadding, mainState, isLine, scaleX);
+    mMainRenderer = MainRenderer(
+      mMainRect,
+      mMainMaxValue,
+      mMainMinValue,
+      ChartStyle.topPadding,
+      mainState,
+      isLine,
+      scaleX,
+    );
     if (mVolRect != null) {
       mVolRenderer ??= VolRenderer(mVolRect!, mVolMaxValue, mVolMinValue,
           ChartStyle.childPadding, scaleX);
@@ -301,6 +322,33 @@ class ChartPainter extends BaseChartPainter {
       pointPaint = Paint();
 
   @override
+  void drawTransactionLine(Canvas canvas, Size size) {
+    for (int i = 0; i < datasTransactedAt.length; i++) {
+      double y = getMainY(datasTransactedAt[i].close);
+      var dashWidth = 10;
+      var dashSpace = 5;
+      double startX = 0.0;
+      var max = (mTranslateX.abs() +
+              mMarginRight -
+              getMinTranslateX().abs() +
+              mPointWidth) *
+          scaleX;
+      double x = mWidth - max;
+      while (startX < mWidth) {
+        canvas.drawLine(
+          Offset(startX + x, y),
+          Offset(startX + x + dashWidth, y),
+          realTimePaint
+            ..color = transactionType[i] == TransactionType.BOUGHT
+                ? ChartColors.upColor
+                : ChartColors.dnColor,
+        );
+        startX += dashSpace + dashWidth;
+      }
+    }
+  }
+
+  @override
   void drawRealTimePrice(Canvas canvas, Size size) {
     if (mMarginRight == 0 || datas.isEmpty == true) return;
     KLineEntity point = datas.last;
@@ -404,6 +452,126 @@ class ChartPainter extends BaseChartPainter {
           realTimePaint
             ..color = ChartColors.realTimeTextColor
             ..shader = null);
+    }
+  }
+
+  @override
+  void drawBuySellPriceIndicator(Canvas canvas, Size size) {
+    for (var i = 0; i < buySellPriceData.length; i++) {
+      if (mMarginRight == 0 || datas.isEmpty == true) return;
+      KLineEntity point = buySellPriceData[i];
+      TextPainter tp = getTextPainter(format(point.close),
+          color: ChartColors.rightRealTimeTextColor);
+      double y = getMainY(point.close);
+
+      var max = (mTranslateX.abs() +
+              mMarginRight -
+              getMinTranslateX().abs() +
+              mPointWidth) *
+          scaleX;
+      double x = mWidth - max;
+      if (!isLine) x += mPointWidth / 2;
+      var dashWidth = 10;
+      var dashSpace = 5;
+      double startX = -11.0 * (datas.length - buySellPriceIndex[i]);
+      final space = (dashSpace + dashWidth);
+      if (tp.width < max) {
+        while (startX < max) {
+          canvas.drawLine(
+            Offset(x + startX, y),
+            Offset(x + startX + dashWidth, y),
+            realTimePaint
+              ..color = buySellTransactionType[i] == TransactionType.BOUGHT
+                  ? Colors.white
+                  : Colors.yellow,
+          );
+          startX += space;
+        }
+
+        if (isLine) {
+          startAnimation();
+          startX = -11.0 * (datas.length - buySellPriceIndex[i]);
+          Gradient pointGradient = RadialGradient(
+              colors: [Colors.white.withOpacity(opacity), Colors.transparent]);
+          pointPaint.shader = pointGradient.createShader(
+              Rect.fromCircle(center: Offset(x + startX, y), radius: 14.0));
+          canvas.drawCircle(Offset(x + startX, y), 14.0, pointPaint);
+          canvas.drawCircle(
+              Offset(x + startX, y), 2.0, realTimePaint..color = Colors.white);
+        } else {
+          stopAnimation();
+        }
+        double left = mWidth - tp.width;
+        double top = y - tp.height / 2;
+        canvas.drawRRect(
+            RRect.fromLTRBAndCorners(
+              left - 10,
+              top - 5,
+              left + tp.width + 3,
+              top + tp.height + 5,
+              bottomLeft: const Radius.circular(5),
+              topLeft: const Radius.circular(5),
+            ),
+            realTimePaint
+              ..color = buySellTransactionType[i] == TransactionType.BOUGHT
+                  ? Colors.white
+                  : Colors.yellow);
+        tp.paint(canvas, Offset(left - 5, top));
+      }
+      // else {
+      //   stopAnimation();
+      //   startX = 0;
+      //   if (point.close > mMainMaxValue) {
+      //     y = getMainY(mMainMaxValue);
+      //   } else if (point.close < mMainMinValue) {
+      //     y = getMainY(mMainMinValue);
+      //   }
+      //   while (startX < mWidth) {
+      //     canvas.drawLine(Offset(startX, y), Offset(startX + dashWidth, y),
+      //         realTimePaint..color = ChartColors.realTimeLongLineColor);
+      //     startX += space;
+      //   }
+
+      //   const padding = 3.0;
+      //   const triangleHeight = 8.0;
+      //   const triangleWidth = 5.0;
+
+      //   double left = mWidth -
+      //       mWidth / ChartStyle.gridColumns -
+      //       tp.width / 2 -
+      //       padding * 2;
+      //   double top = y - tp.height / 2 - padding;
+      //   //padding
+      //   double right = left + tp.width + padding * 2 + triangleWidth + padding;
+      //   double bottom = top + tp.height + padding * 2;
+      //   double radius = (bottom - top) / 2;
+
+      //   RRect rectBg1 =
+      //       RRect.fromLTRBR(left, top, right, bottom, Radius.circular(radius));
+      //   RRect rectBg2 = RRect.fromLTRBR(left - 1, top - 1, right + 1,
+      //       bottom + 1, Radius.circular(radius + 2));
+      //   canvas.drawRRect(rectBg2,
+      //       realTimePaint..color = ChartColors.realTimeTextBorderColor);
+      //   canvas.drawRRect(
+      //       rectBg1, realTimePaint..color = ChartColors.realTimeBgColor);
+      //   tp = getTextPainter(format(point.close),
+      //       color: ChartColors.realTimeTextColor);
+      //   Offset textOffset = Offset(left + padding, y - tp.height / 2);
+      //   tp.paint(canvas, textOffset);
+
+      //   Path path = Path();
+      //   double dx = tp.width + textOffset.dx + padding;
+      //   double dy = top + (bottom - top - triangleHeight) / 2;
+      //   path.moveTo(dx, dy);
+      //   path.lineTo(dx + triangleWidth, dy + triangleHeight / 2);
+      //   path.lineTo(dx, dy + triangleHeight);
+      //   path.close();
+      //   canvas.drawPath(
+      //       path,
+      //       realTimePaint
+      //         ..color = ChartColors.realTimeTextColor
+      //         ..shader = null);
+      // }
     }
   }
 

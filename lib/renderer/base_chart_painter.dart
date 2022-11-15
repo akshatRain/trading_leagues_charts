@@ -13,6 +13,12 @@ abstract class BaseChartPainter extends CustomPainter {
   static double maxScrollX = 0.0;
   List<KLineEntity> datas;
   MainState mainState;
+  // bool buySellPriceIndicator;
+  List<KLineEntity> buySellPriceData;
+  List<KLineEntity> datasTransactedAt;
+  List<TransactionType> transactionType;
+  List<int> buySellPriceIndex;
+  List<TransactionType> buySellTransactionType;
   VolState volState;
   SecondaryState secondaryState;
 
@@ -39,16 +45,23 @@ abstract class BaseChartPainter extends CustomPainter {
   List<String> mFormats = [yyyy, '-', mm, '-', dd, ' ', HH, ':', nn];
   double mMarginRight = 0.0;
 
-  BaseChartPainter(
-      {required this.datas,
-      required this.scaleX,
-      required this.scrollX,
-      required this.isLongPress,
-      required this.selectX,
-      this.mainState = MainState.MA,
-      this.volState = VolState.VOL,
-      this.secondaryState = SecondaryState.MACD,
-      this.isLine = false}) {
+  BaseChartPainter({
+    required this.datas,
+    required this.scaleX,
+    required this.scrollX,
+    required this.isLongPress,
+    required this.selectX,
+    this.mainState = MainState.MA,
+    this.volState = VolState.VOL,
+    this.secondaryState = SecondaryState.MACD,
+    this.isLine = false,
+    // this.buySellPriceIndicator = false,
+    required this.buySellPriceData,
+    required this.buySellPriceIndex,
+    required this.buySellTransactionType,
+    required this.datasTransactedAt,
+    required this.transactionType,
+  }) {
     mItemCount = datas.length;
     mDataLen = mItemCount * mPointWidth;
     initFormats();
@@ -88,11 +101,17 @@ abstract class BaseChartPainter extends CustomPainter {
     if (datas.isNotEmpty) {
       drawChart(canvas, size);
       drawRightText(canvas);
+      if (datasTransactedAt.isNotEmpty) {
+        drawTransactionLine(canvas, size);
+      }
       drawRealTimePrice(canvas, size);
       drawDate(canvas, size);
       if (isLongPress == true) drawCrossLineText(canvas, size);
       drawText(canvas, datas.last, 5);
       drawMaxAndMin(canvas);
+      // if (buySellPriceIndicator) {
+      drawBuySellPriceIndicator(canvas, size);
+      // }
     }
     canvas.restore();
   }
@@ -304,6 +323,10 @@ abstract class BaseChartPainter extends CustomPainter {
   }
 
   void drawRealTimePrice(Canvas canvas, Size size);
+
+  void drawBuySellPriceIndicator(Canvas canvas, Size size);
+
+  void drawTransactionLine(Canvas canvas, Size size);
 
   String format(double n) {
     return NumberUtil.format(n);

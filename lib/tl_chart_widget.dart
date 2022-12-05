@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:trading_leagues_chart/generated/l10n.dart';
 import 'chart_style.dart';
+import 'entity/executed_trades_entity.dart';
 import 'entity/info_window_entity.dart';
 import 'entity/k_line_entity.dart';
 import 'renderer/chart_painter.dart';
@@ -23,12 +24,9 @@ class KChartWidget extends StatefulWidget {
   final VolState volState;
   final SecondaryState secondaryState;
   final bool isLine;
-  // final bool buySellPriceIndicator;
-  final List<KLineEntity> buySellPriceData;
-  final List<int> buySellPriceIndex;
+  final List<ExecutedTradesEntity> buySellPriceData;
   final List<TransactionType> buySellTransactionType;
-  final List<KLineEntity> datasTransactedAt;
-  final List<TransactionType> transactionType;
+  final num ltp;
 
   KChartWidget(
     this.datas, {
@@ -38,12 +36,9 @@ class KChartWidget extends StatefulWidget {
     this.secondaryState = SecondaryState.MACD,
     this.isLine = false,
     int fractionDigits = 2,
-    // this.buySellPriceIndicator = false,
     required this.buySellPriceData,
-    required this.buySellPriceIndex,
     required this.buySellTransactionType,
-    required this.datasTransactedAt,
-    required this.transactionType,
+    required this.ltp,
   }) : super(key: key) {
     NumberUtil.fractionDigits = fractionDigits;
   }
@@ -197,25 +192,21 @@ class _KChartWidgetState extends State<KChartWidget>
           CustomPaint(
             size: const Size(double.infinity, double.infinity),
             painter: ChartPainter(
-              datas: widget.datas,
-              scaleX: mScaleX,
-              scrollX: mScrollX,
-              selectX: mSelectX,
-              isLongPass: isLongPress,
-              mainState: widget.mainState,
-              volState: widget.volState,
-              secondaryState: widget.secondaryState,
-              isLine: widget.isLine,
-              sink: mInfoWindowStream.sink,
-              opacity: _animation.value,
-              controller: _controller,
-              // buySellPriceIndicator: widget.buySellPriceIndicator,
-              buySellPriceData: widget.buySellPriceData,
-              buySellPriceIndex: widget.buySellPriceIndex,
-              buySellTransactionType: widget.buySellTransactionType,
-              datasTransactedAt: widget.datasTransactedAt,
-              transactionType: widget.transactionType,
-            ),
+                datas: widget.datas,
+                scaleX: mScaleX,
+                scrollX: mScrollX,
+                selectX: mSelectX,
+                isLongPass: isLongPress,
+                mainState: widget.mainState,
+                volState: widget.volState,
+                secondaryState: widget.secondaryState,
+                isLine: widget.isLine,
+                sink: mInfoWindowStream.sink,
+                opacity: _animation.value,
+                controller: _controller,
+                buySellPriceData: widget.buySellPriceData,
+                buySellTransactionType: widget.buySellTransactionType,
+                ltp: widget.ltp),
           ),
           _buildInfoDialog()
         ],

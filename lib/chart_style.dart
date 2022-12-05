@@ -5,6 +5,8 @@ class ChartColors {
 
   // static const Color bgColor = Color(0xff0D141E);
   static const Color bgColor = Color(0x00000000);
+  static const Color bgColorPNL = Color(0xFF171728);
+
   static const Color kLineColor = Color(0xff4C86CD);
   // static const Color gridColor = Color(0xff4c5c74);
   static const Color gridColor = Color(0xff9EA0AA);

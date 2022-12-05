@@ -3,6 +3,7 @@ export 'package:flutter/material.dart'
     show Color, required, TextStyle, Rect, Canvas, Size, CustomPainter;
 import 'package:flutter/material.dart'
     show Color, TextStyle, Rect, Canvas, Size, CustomPainter;
+import 'package:trading_leagues_chart/entity/executed_trades_entity.dart';
 import 'package:trading_leagues_chart/utils/date_format_util.dart';
 import 'package:trading_leagues_chart/utils/number_util.dart';
 import 'package:trading_leagues_chart/entity/k_line_entity.dart';
@@ -13,12 +14,9 @@ abstract class BaseChartPainter extends CustomPainter {
   static double maxScrollX = 0.0;
   List<KLineEntity> datas;
   MainState mainState;
-  // bool buySellPriceIndicator;
-  List<KLineEntity> buySellPriceData;
-  List<KLineEntity> datasTransactedAt;
-  List<TransactionType> transactionType;
-  List<int> buySellPriceIndex;
+  List<ExecutedTradesEntity> buySellPriceData;
   List<TransactionType> buySellTransactionType;
+  final num ltp;
   VolState volState;
   SecondaryState secondaryState;
 
@@ -55,12 +53,9 @@ abstract class BaseChartPainter extends CustomPainter {
     this.volState = VolState.VOL,
     this.secondaryState = SecondaryState.MACD,
     this.isLine = false,
-    // this.buySellPriceIndicator = false,
     required this.buySellPriceData,
-    required this.buySellPriceIndex,
     required this.buySellTransactionType,
-    required this.datasTransactedAt,
-    required this.transactionType,
+    required this.ltp,
   }) {
     mItemCount = datas.length;
     mDataLen = mItemCount * mPointWidth;
@@ -101,9 +96,6 @@ abstract class BaseChartPainter extends CustomPainter {
     if (datas.isNotEmpty) {
       drawChart(canvas, size);
       drawRightText(canvas);
-      if (datasTransactedAt.isNotEmpty) {
-        drawTransactionLine(canvas, size);
-      }
       drawRealTimePrice(canvas, size);
       drawDate(canvas, size);
       if (isLongPress == true) drawCrossLineText(canvas, size);
@@ -325,8 +317,6 @@ abstract class BaseChartPainter extends CustomPainter {
   void drawRealTimePrice(Canvas canvas, Size size);
 
   void drawBuySellPriceIndicator(Canvas canvas, Size size);
-
-  void drawTransactionLine(Canvas canvas, Size size);
 
   String format(double n) {
     return NumberUtil.format(n);

@@ -1,9 +1,10 @@
 import 'dart:convert';
 import 'dart:ffi';
 import 'dart:math';
-
+import 'package:example/models/trade_book_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:trading_leagues_chart/entity/executed_trades_entity.dart';
 import 'package:trading_leagues_chart/trading_leagues_chart.dart';
 import 'package:trading_leagues_chart/generated/l10n.dart' as k_chart;
 import 'package:http/http.dart' as http;
@@ -43,12 +44,17 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   List<KLineEntity> datas = [];
-  List<KLineEntity> datasTransactedAt = [];
-  List<TransactionType> transactionType = [];
-  bool showLoading = true;
+  bool showLoading1 = true, showLoading2 = true;
   bool isLine = true;
-  bool showBuySellPriceIndicator = false;
-  List<KLineEntity> buySellPriceData = [];
+  List<ExecutedTradesEntity> buySellPriceData = [
+    // ExecutedTradesEntity.toExecutedTradesEntity(
+    //   ltp: 17000.1,
+    //   tradePrice: 17000.1,
+    //   quantity: 1,
+    //   oid: 21,
+    // ),
+  ];
+  // Map<String, ExecutedTradesEntity> buySellPriceDataMap = {};
   List<int> buySellPriceIndex = [];
   List<TransactionType> buySellTransactionType = [];
 
@@ -67,29 +73,15 @@ class _MyHomePageState extends State<MyHomePage> {
           .reversed
           .toList()
           .cast<KLineEntity>();
-      // datasTransactedAt = list
-      //     .map((item) => KLineEntity.fromJson(item))
-      //     .toList()
-      //     .reversed
-      //     .toList()
-      //     .sublist(295, 300)
-      //     .cast<KLineEntity>();
-      // transactionType = [
-      //   TransactionType.BOUGHT,
-      //   TransactionType.SOLD,
-      //   TransactionType.BOUGHT,
-      //   TransactionType.SOLD,
-      //   TransactionType.BOUGHT
-      // ];
       DataUtil.calculate(datas);
-      showLoading = false;
+      showLoading1 = false;
       setState(() {});
     }
   }
 
   Future<String> getIPAddress(String? period) async {
     var url =
-        'https://api.huobi.br.com/market/history/kline?period=${period ?? '1day'}&size=300&symbol=btcusdt';
+        'https://api.huobi.br.com/market/history/kline?period=${period ?? '1min'}&size=300&symbol=btcusdt';
     String result;
     var response =
         await http.get(Uri.parse(url)).timeout(const Duration(seconds: 7));
@@ -101,17 +93,71 @@ class _MyHomePageState extends State<MyHomePage> {
     return result;
   }
 
+  void callTradeBookApi() async {
+    try {
+      TradeBookModel response = await getTradeBook(43881);
+      for (TradeBookData element in response.data!) {
+        if (element.closed == 0) {
+          buySellPriceData.add(
+            ExecutedTradesEntity.toExecutedTradesEntity(
+              // ltp: 17050.5,
+              tradePrice: 17050.5,
+              quantity: 1,
+              oid: element.oid as int,
+            ),
+          );
+          if (element.transaction as int == 1) {
+            buySellTransactionType.add(TransactionType.BOUGHT);
+          } else {
+            buySellTransactionType.add(TransactionType.SOLD);
+          }
+        }
+      }
+    } finally {
+      showLoading2 = false;
+      setState(() {});
+    }
+  }
+
+  Future<TradeBookModel> getTradeBook(int leagueId) async {
+    TradeBookModel data;
+    String? jwt =
+            "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1aWQiOiJVR1I4UFJFS0FYIiwiaWF0IjoxNjcwMTYwNDM3LCJleHAiOjE2NzI3NTI0Mzd9.SQ-7qZowTpBAcYbMBslejNsqhkYSLJu1M-9n0iJ1oJs",
+        uid = "UGR8PREKAX";
+    try {
+      var header = <String, String>{
+        "Authorization": "Bearer $jwt",
+        "Content-Type": "application/json"
+      };
+      var body = jsonEncode({"uid": uid, "leagueid": leagueId});
+
+      var url =
+          Uri.encodeFull("https://tl.raintech.ai/classicleague/getTradebook");
+      final response =
+          await http.post(Uri.parse(url), body: body, headers: header);
+
+      if (response.statusCode == 200) {
+        data = TradeBookModel.fromJson(json.decode(response.body.toString()));
+        return data;
+      } else {
+        throw response.statusCode.toString();
+      }
+    } catch (error) {
+      throw error.toString();
+    }
+  }
+
   @override
   void initState() {
     super.initState();
     getData('1min');
+    callTradeBookApi();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF171728),
-//      appBar: AppBar(title: Text(widget.title)),
       body: ListView(
         children: [
           Center(
@@ -127,15 +173,12 @@ class _MyHomePageState extends State<MyHomePage> {
                   secondaryState: SecondaryState.NONE,
                   volState: VolState.NONE,
                   fractionDigits: 2,
-                  // buySellPriceIndicator: showBuySellPriceIndicator,
                   buySellPriceData: buySellPriceData,
-                  buySellPriceIndex: buySellPriceIndex,
+                  ltp: 0,
                   buySellTransactionType: buySellTransactionType,
-                  datasTransactedAt: datasTransactedAt,
-                  transactionType: transactionType,
                 ),
               ),
-              if (showLoading)
+              if (showLoading1 || showLoading2)
                 Container(
                     width: double.infinity,
                     height: 450,
@@ -156,16 +199,16 @@ class _MyHomePageState extends State<MyHomePage> {
       children: <Widget>[
         button("BUY", onPressed: () {
           setState(() {
-            buySellPriceData.add(KLineEntity.fromJson(datas.last.toJson()));
-            buySellPriceIndex.add(datas.length.toInt());
-            buySellTransactionType.add(TransactionType.BOUGHT);
+            // buySellPriceData.add(KLineEntity.fromJson(datas.last.toJson()));
+            // buySellPriceIndex.add(datas.length.toInt());
+            // buySellTransactionType.add(TransactionType.BOUGHT);
           });
         }),
         button("SELL", onPressed: () {
           setState(() {
-            buySellPriceData.add(KLineEntity.fromJson(datas.last.toJson()));
-            buySellPriceIndex.add(datas.length.toInt());
-            buySellTransactionType.add(TransactionType.SOLD);
+            // buySellPriceData.add(KLineEntity.fromJson(datas.last.toJson()));
+            // buySellPriceIndex.add(datas.length.toInt());
+            // buySellTransactionType.add(TransactionType.SOLD);
           });
         }),
         // button("kLine", onPressed: () => isLine = !isLine),
@@ -184,14 +227,12 @@ class _MyHomePageState extends State<MyHomePage> {
         //             ? SecondaryState.MACD
         //             : SecondaryState.NONE),
         button("update", onPressed: () {
-          //更新最后一条数据
           datas.last.close += (Random().nextInt(100) - 50).toDouble();
           datas.last.high = max(datas.last.high, datas.last.close);
           datas.last.low = min(datas.last.low, datas.last.close);
           DataUtil.updateLastData(datas);
         }),
         button("addData", onPressed: () {
-          //拷贝一个对象，修改数据
           var kLineEntity = KLineEntity.fromJson(datas.last.toJson());
           kLineEntity.id = kLineEntity.id! + 60 * 60 * 24;
           kLineEntity.open = kLineEntity.close;

@@ -429,7 +429,7 @@ class ChartPainter extends BaseChartPainter {
       ExecutedTradesEntity point = buySellPriceData[i];
 
       // Adds the suffix K, M, B for the pnl
-      num pnl = ltp - point.tradePrice;
+      num pnl = (ltp - point.tradePrice) * point.quantity;
       if (buySellTransactionType[i] == TransactionType.SOLD &&
           (pnl > 0 || pnl < 0)) {
         pnl *= -1;

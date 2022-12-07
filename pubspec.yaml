@@ -1,6 +1,6 @@
 name: trading_leagues_chart
 description: Charts written by Rain platforms (https://www.rainplatforms.com/) for their propreitary apps
-version: 0.0.4
+version: 0.0.5
 homepage: https://github.com/akshatRain/trading_leagues_charts.git
 
 environment:
